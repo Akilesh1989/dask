@@ -1,6 +1,6 @@
 import time
-from dask import delayed
 import dask
+from dask.diagnostics import ProgressBar
 
 
 names = ['Alice', 'Bob', 'Charles']
@@ -15,32 +15,22 @@ def log_time(func):
     return wrapper
 
 
+@dask.delayed
 def hello_name(name):
     time.sleep(1)
     return 'Hello' + name
 
 
-# sequential run
-@log_time
-def run_sequential():
-    for name in names:
-        hello_name(name)
-
-
-run_sequential()
-
-
-# defining the parallize function
-def parallize(function_name, somelist):
-    p_steps = [delayed(function_name)(name) for name in somelist]
-    futures = dask.persist(*p_steps)
-    dask.compute(*futures)
-
-
 # parallel run
 @log_time
 def run_parallel():
-    parallize(hello_name, names)
+    results = []
+    p_steps = [hello_name(name) for name in names]
+    results.append(p_steps)
+    print(results)
+    with ProgressBar():
+        output = dask.compute(*results)
+    print(output)
 
 
 run_parallel()
